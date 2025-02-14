@@ -46,3 +46,16 @@ python main.py -l LOCATION_ID -n ntfy -t YOUR_NTFY_TOPIC -i CHECK_INTERVAL
 Example:
 ```bash
 python main.py -l 14321 -n ntfy -t your_topic -i 900
+```
+
+## Notifications
+The system uses ntfy.sh for notifications. You'll receive alerts when:
+- The monitoring service starts (test notification)
+- New appointment slots become available
+- No slots are currently available (status update)
+
+## Development
+
+### Running Tests
+```bash
+pytest test_slot_checker.py
