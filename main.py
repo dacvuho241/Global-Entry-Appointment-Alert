@@ -74,18 +74,19 @@ def main():
                 available_slots = slot_checker.check_slots()
 
                 if available_slots:
-                    # Consolidate all slot information into a single message
-                    all_slots_message = "🎉 Global Entry Slots Available!\n\n"
+                    # Create message with only the nearest available slots
+                    slot = available_slots[0]  # We only have one slot now (earliest date)
+                    message = (
+                        f"🎉 Global Entry Slots Available!\n\n"
+                        f"Location: {slot['location_name']}\n"
+                        f"Date: {slot['date']}\n"
+                        f"Available times (EST):\n"
+                    )
+                    times_str = '\n'.join([f"- {time}" for time in slot['times']])
+                    message += times_str
 
-                    for slot in available_slots:
-                        all_slots_message += f"Location: {slot['location_name']}\n"
-                        all_slots_message += f"Date: {slot['date']}\n"
-                        all_slots_message += "Available times (EST):\n"
-                        times_str = '\n'.join([f"- {time}" for time in slot['times']])
-                        all_slots_message += f"{times_str}\n\n"
-
-                    # Send a single notification with all slots
-                    success = notifier.send_notification(all_slots_message, title="Global Entry Slot Available")
+                    # Send notification
+                    success = notifier.send_notification(message, title="Global Entry Slot Available")
                 else:
                     # Send notification for no available slots
                     message = (

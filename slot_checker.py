@@ -37,6 +37,9 @@ class GlobalEntrySlotChecker:
         self.logger = logging.getLogger(__name__)
         self.logger.debug(f"Initialized with date range: {date_start} to {date_end}")
 
+        # Store last seen slots to prevent duplicate notifications
+        self.last_seen_slots = {}
+
         # Configure session with retry strategy
         self.session = requests.Session()
         retry_strategy = Retry(
@@ -47,6 +50,36 @@ class GlobalEntrySlotChecker:
         adapter = HTTPAdapter(max_retries=retry_strategy)
         self.session.mount("https://", adapter)
         self.session.mount("http://", adapter)
+
+    def _slots_changed(self, location_id: str, new_slots: list) -> bool:
+        """
+        Compare new slots with last seen slots to determine if notification should be sent
+        Returns True if slots have changed or if this is the first check
+        """
+        if not new_slots:
+            # If no new slots and we didn't have any before, no change
+            return bool(self.last_seen_slots.get(location_id))
+
+        # Get the first slot since we only care about the earliest date
+        new_slot = new_slots[0]
+        last_slot = self.last_seen_slots.get(location_id)
+
+        # If we have no last seen slots, or if the slots are different
+        if not last_slot:
+            self.last_seen_slots[location_id] = new_slot
+            return True
+
+        # Compare date and times
+        has_changed = (
+            new_slot['date'] != last_slot['date'] or 
+            new_slot['times'] != last_slot['times']
+        )
+
+        if has_changed:
+            self.last_seen_slots[location_id] = new_slot
+            self.logger.info(f"Slots changed for location {location_id}")
+
+        return has_changed
 
     def check_slots(self):
         """Check for available appointment slots"""
@@ -60,7 +93,6 @@ class GlobalEntrySlotChecker:
         for location_id in self.location_ids:
             try:
                 self.logger.info(f"Checking slots for location {location_id}")
-                # Removed limit=1 to get all available slots
                 url = f"{self.BASE_URL}?orderBy=soonest&locationId={location_id}&minimum=1"
 
                 response = self._make_request(url)
@@ -70,7 +102,12 @@ class GlobalEntrySlotChecker:
                 if response.status_code == 200:
                     slots = response.json()
                     self.logger.info(f"Found {len(slots)} slots for location {location_id}")
-                    available_slots.extend(self._process_slots(slots, location_id))
+                    processed_slots = self._process_slots(slots, location_id)
+
+                    # Only add slots to available_slots if they've changed
+                    if processed_slots and self._slots_changed(location_id, processed_slots):
+                        available_slots.extend(processed_slots)
+
                 elif response.status_code == 403:
                     self.logger.warning("Session expired, refreshing...")
                     if self._refresh_session():
@@ -78,7 +115,9 @@ class GlobalEntrySlotChecker:
                         if response and response.status_code == 200:
                             slots = response.json()
                             self.logger.info(f"Found {len(slots)} slots for location {location_id}")
-                            available_slots.extend(self._process_slots(slots, location_id))
+                            processed_slots = self._process_slots(slots, location_id)
+                            if processed_slots and self._slots_changed(location_id, processed_slots):
+                                available_slots.extend(processed_slots)
                 else:
                     self._handle_error_response(response, location_id)
 
@@ -179,7 +218,7 @@ class GlobalEntrySlotChecker:
         self.logger.debug(f"Response content: {response.text}")
 
     def _process_slots(self, slots, location_id):
-        """Process and format available slots"""
+        """Process and format available slots, returning only the earliest date"""
         processed_slots = []
         slots_by_date = {}
         location_names = {
@@ -212,19 +251,20 @@ class GlobalEntrySlotChecker:
             except Exception as e:
                 self.logger.error(f"Error processing slot {slot_data}: {str(e)}")
 
-        # Create processed slots with all times for each date
-        for date, times in slots_by_date.items():
-            times.sort()  # Sort times chronologically
+        if slots_by_date:
+            # Get the earliest date
+            earliest_date = min(slots_by_date.keys())
+            times = sorted(slots_by_date[earliest_date])  # Sort times chronologically
+
             slot_info = {
                 'location': location_id,
-                'date': date,
+                'date': earliest_date,
                 'times': times,
                 'location_name': location_name
             }
-            self.logger.info(f"Found {len(times)} slots at {location_name} on {date}: {', '.join(times)}")
+            self.logger.info(f"Found {len(times)} slots at {location_name} on {earliest_date}: {', '.join(times)}")
             processed_slots.append(slot_info)
-
-        if not processed_slots:
+        else:
             self.logger.info(f"No available slots found at {location_name}")
 
         return processed_slots
