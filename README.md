@@ -1,12 +1,12 @@
 pip install pytest pytest-mock python-dotenv pytz requests urllib3
 ```
 
+## Configuration
+
 Copy `.env.example` to `.env` and configure your settings:
 ```bash
 cp .env.example .env
 ```
-
-## Configuration
 
 Edit `.env` file with your preferences:
 
