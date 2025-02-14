@@ -54,7 +54,8 @@ class GlobalEntrySlotChecker:
         for location_id in self.location_ids:
             try:
                 self.logger.info(f"Checking slots for location {location_id}")
-                url = f"{self.BASE_URL}?orderBy=soonest&limit=1&locationId={location_id}&minimum=1"
+                # Removed limit=1 to get all available slots
+                url = f"{self.BASE_URL}?orderBy=soonest&locationId={location_id}&minimum=1"
 
                 response = self._make_request(url)
                 if not response:
@@ -174,15 +175,18 @@ class GlobalEntrySlotChecker:
     def _process_slots(self, slots, location_id):
         """Process and format available slots"""
         processed_slots = []
+        slots_by_date = {}
         location_names = {
             '5140': 'JFK International Airport',
-            '14321': 'Charlotte-Douglas International Airport'
+            '14321': 'Charlotte-Douglas International Airport',
+            '5182': 'Daniel K. Inouye International Airport',
             # Add more locations as needed
         }
         location_name = location_names.get(location_id, f'Location {location_id}')
 
         self.logger.info(f"Processing slots for {location_name}")
 
+        # Group slots by date
         for slot_data in slots:
             try:
                 appointment = Appointment(
@@ -191,16 +195,28 @@ class GlobalEntrySlotChecker:
                     end_timestamp=slot_data.get('endTimestamp', ''),
                     duration=slot_data.get('duration', 15)
                 )
-                slot_info = {
-                    'location': appointment.location_id,
-                    'date': appointment.date,
-                    'time': appointment.time,
-                    'timestamp': appointment.start_timestamp
-                }
-                self.logger.info(f"Found slot at {location_name}: {appointment.date} at {appointment.time}")
-                processed_slots.append(slot_info)
+
+                # Group slots by date
+                if appointment.date not in slots_by_date:
+                    slots_by_date[appointment.date] = []
+                slots_by_date[appointment.date].append(appointment.time)
+
+                self.logger.debug(f"Added slot for {location_name} on {appointment.date} at {appointment.time}")
+
             except Exception as e:
                 self.logger.error(f"Error processing slot {slot_data}: {str(e)}")
+
+        # Create processed slots with all times for each date
+        for date, times in slots_by_date.items():
+            times.sort()  # Sort times chronologically
+            slot_info = {
+                'location': location_id,
+                'date': date,
+                'times': times,
+                'location_name': location_name
+            }
+            self.logger.info(f"Found {len(times)} slots at {location_name} on {date}: {', '.join(times)}")
+            processed_slots.append(slot_info)
 
         if not processed_slots:
             self.logger.info(f"No available slots found at {location_name}")
@@ -209,8 +225,18 @@ class GlobalEntrySlotChecker:
 
     def get_test_slot(self):
         """Generate a test slot for verification purposes"""
+        location_id = self.location_ids[0]
+        location_names = {
+            '5140': 'JFK International Airport',
+            '14321': 'Charlotte-Douglas International Airport',
+            '5182': 'Daniel K. Inouye International Airport',
+            # Add more locations as needed
+        }
+        location_name = location_names.get(location_id, f'Location {location_id}')
+
         test_slot = {
-            'location': self.location_ids[0],
+            'location': location_id,
+            'location_name': location_name,
             'date': datetime.now().strftime('%Y-%m-%d'),
             'time': datetime.now().strftime('%H:%M'),
             'timestamp': datetime.now().strftime('%Y-%m-%dT%H:%M')

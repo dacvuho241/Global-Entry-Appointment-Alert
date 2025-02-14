@@ -11,14 +11,14 @@ def parse_args():
     """Parse command line arguments"""
     parser = argparse.ArgumentParser(description='Global Entry Appointment Slot Checker')
     parser.add_argument('-l', '--location', required=True,
-                      help='Location ID to check for appointments')
+                        help='Location ID to check for appointments')
     parser.add_argument('-n', '--notifier', required=True,
-                      choices=['ntfy'],
-                      help='Notification service to use (currently only ntfy supported)')
+                        choices=['ntfy'],
+                        help='Notification service to use (currently only ntfy supported)')
     parser.add_argument('-t', '--topic', default='vu_alert',
-                      help='ntfy.sh topic for notifications (default: vu_alert)')
+                        help='ntfy.sh topic for notifications (default: vu_alert)')
     parser.add_argument('-i', '--interval', type=int, default=300,
-                      help='Time between checks in seconds (default: 300)')
+                        help='Time between checks in seconds (default: 300)')
     return parser.parse_args()
 
 def main():
@@ -58,10 +58,10 @@ def main():
         test_slots = slot_checker.get_test_slot()
         for slot in test_slots:
             message = (
-                f"🧪 Test Notification\n"
-                f"Location: {slot['location']}\n"
-                f"Date: {slot['date']}\n"
-                f"Time: {slot['time']}"
+                f"🧪 Test Alert: {slot['location_name']} Monitor Started\n"
+                f"Location: {slot['location_name']}\n"
+                f"Current Time: {slot['time']}\n"
+                f"Monitoring for available appointments..."
             )
             success = notifier.send_notification(message)
             logger.info(f"Test notification {'sent successfully' if success else 'failed'}")
@@ -74,11 +74,12 @@ def main():
                 if available_slots:
                     # Send notifications for available slots
                     for slot in available_slots:
+                        times_str = '\n'.join([f"- {time}" for time in slot['times']])
                         message = (
-                            f"🎉 Global Entry Appointment Available!\n"
-                            f"Location: {slot['location']}\n"
+                            f"🎉 Global Entry Appointments Available!\n"
+                            f"Location: {slot['location_name']}\n"
                             f"Date: {slot['date']}\n"
-                            f"Time: {slot['time']}"
+                            f"Available times:\n{times_str}"
                         )
                         notifier.send_notification(message)
 
