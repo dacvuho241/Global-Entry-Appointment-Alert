@@ -7,13 +7,13 @@ class Notifier:
         self.logger = logging.getLogger(__name__)
         self.logger.info(f"Notifier initialized with ntfy topic: {ntfy_topic}")
 
-    def send_notification(self, message):
-        """Send notification through ntfy.sh"""
+    def send_notification(self, message, title='Global Entry Alert'):
+        """Send notification through ntfy.sh with custom title"""
         try:
             self.logger.info(f"Attempting to send notification to ntfy.sh/{self.ntfy_topic}")
             url = f"https://ntfy.sh/{self.ntfy_topic}"
             headers = {
-                'Title': 'Global Entry Slot Available',
+                'Title': title,
                 'Priority': 'urgent',
                 'Tags': 'calendar'
             }

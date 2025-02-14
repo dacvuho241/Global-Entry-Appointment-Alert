@@ -4,6 +4,7 @@ from datetime import datetime
 import time
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+import pytz
 
 class Appointment:
     """Represents a Global Entry appointment slot"""
@@ -12,14 +13,19 @@ class Appointment:
         self.start_timestamp = start_timestamp
         self.end_timestamp = end_timestamp
         self.duration = duration
+        self.est_tz = pytz.timezone('America/New_York')
 
     @property
     def date(self):
-        return datetime.strptime(self.start_timestamp, '%Y-%m-%dT%H:%M').strftime('%Y-%m-%d')
+        utc_time = datetime.strptime(self.start_timestamp, '%Y-%m-%dT%H:%M')
+        est_time = pytz.UTC.localize(utc_time).astimezone(self.est_tz)
+        return est_time.strftime('%Y-%m-%d')
 
     @property
     def time(self):
-        return datetime.strptime(self.start_timestamp, '%Y-%m-%dT%H:%M').strftime('%H:%M')
+        utc_time = datetime.strptime(self.start_timestamp, '%Y-%m-%dT%H:%M')
+        est_time = pytz.UTC.localize(utc_time).astimezone(self.est_tz)
+        return est_time.strftime('%I:%M %p EST')  # 12-hour format with AM/PM and EST indicator
 
 class GlobalEntrySlotChecker:
     BASE_URL = "https://ttp.cbp.dhs.gov/schedulerapi/slots"
@@ -234,12 +240,16 @@ class GlobalEntrySlotChecker:
         }
         location_name = location_names.get(location_id, f'Location {location_id}')
 
+        # Get current time in EST
+        est_tz = pytz.timezone('America/New_York')
+        current_time = datetime.now(est_tz)
+
         test_slot = {
             'location': location_id,
             'location_name': location_name,
-            'date': datetime.now().strftime('%Y-%m-%d'),
-            'time': datetime.now().strftime('%H:%M'),
-            'timestamp': datetime.now().strftime('%Y-%m-%dT%H:%M')
+            'date': current_time.strftime('%Y-%m-%d'),
+            'time': current_time.strftime('%I:%M %p EST'),  # 12-hour format with AM/PM and EST indicator
+            'timestamp': current_time.strftime('%Y-%m-%dT%H:%M')
         }
         self.logger.info(f"Generated test slot: {test_slot}")
         return [test_slot]

@@ -2,6 +2,8 @@ import os
 import time
 import logging
 import argparse
+import pytz
+from datetime import datetime
 from config import load_config
 from slot_checker import GlobalEntrySlotChecker
 from notifier import Notifier
@@ -60,7 +62,7 @@ def main():
             message = (
                 f"🧪 Test Alert: {slot['location_name']} Monitor Started\n"
                 f"Location: {slot['location_name']}\n"
-                f"Current Time: {slot['time']}\n"
+                f"Current Time: {slot['time']}\n"  # This will now show in EST
                 f"Monitoring for available appointments..."
             )
             success = notifier.send_notification(message)
@@ -72,16 +74,25 @@ def main():
                 available_slots = slot_checker.check_slots()
 
                 if available_slots:
-                    # Send notifications for available slots
+                    # Consolidate all slot information into a single message
+                    all_slots_message = "🎉 Global Entry Slots Available!\n\n"
+
                     for slot in available_slots:
+                        all_slots_message += f"Location: {slot['location_name']}\n"
+                        all_slots_message += f"Date: {slot['date']}\n"
+                        all_slots_message += "Available times (EST):\n"
                         times_str = '\n'.join([f"- {time}" for time in slot['times']])
-                        message = (
-                            f"🎉 Global Entry Appointments Available!\n"
-                            f"Location: {slot['location_name']}\n"
-                            f"Date: {slot['date']}\n"
-                            f"Available times:\n{times_str}"
-                        )
-                        notifier.send_notification(message)
+                        all_slots_message += f"{times_str}\n\n"
+
+                    # Send a single notification with all slots
+                    success = notifier.send_notification(all_slots_message, title="Global Entry Slot Available")
+                else:
+                    # Send notification for no available slots
+                    message = (
+                        f"No appointments currently available at {config['LOCATION_IDS'][0]}\n"
+                        f"Will check again in {config['CHECK_INTERVAL']} seconds."
+                    )
+                    success = notifier.send_notification(message, title="No Slot Available")
 
                 # Wait before next check
                 time.sleep(config['CHECK_INTERVAL'])
