@@ -13,7 +13,7 @@ def load_config():
         'LOCATION_IDS': [str(loc_id).strip() for loc_id in location_ids.split(',')],  # Ensure proper string formatting
         'DATE_START': now.strftime('%Y-%m-%d'),  # Just the date portion for API
         'DATE_END': (now + timedelta(days=365)).strftime('%Y-%m-%d'),  # Just the date portion for API
-        'CHECK_INTERVAL': int(os.getenv('CHECK_INTERVAL', '300')),  # 5 minutes default
+        'CHECK_INTERVAL': int(os.getenv('CHECK_INTERVAL', '900')),  # 15 minutes default
         'NTFY_TOPIC': os.getenv('NTFY_TOPIC', 'vu_alert')
     }
 

@@ -27,7 +27,7 @@ task = "packager.installForAll"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "python main.py -l 5140 -n ntfy -t vu_alert -i 600"
+args = "python main.py -l 14321 -n ntfy -t vu_alert -i 900"
 
 [deployment]
-run = ["sh", "-c", "python main.py -l 5140 -n ntfy -t vu_alert -i 600"]
+run = ["sh", "-c", "python main.py -l 14321 -n ntfy -t vu_alert -i 900"]

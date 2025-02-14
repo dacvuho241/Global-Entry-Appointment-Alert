@@ -224,8 +224,18 @@ class GlobalEntrySlotChecker:
         location_names = {
             '5140': 'JFK International Airport',
             '14321': 'Charlotte-Douglas International Airport',
+            '5142': 'Boston Logan Airport',
             '5182': 'Daniel K. Inouye International Airport',
-            # Add more locations as needed
+            '5002': 'Los Angeles International Airport',
+            '5446': 'San Francisco International Airport',
+            '5177': 'Seattle-Tacoma International Airport',
+            '5013': 'Miami International Airport',
+            '5300': 'Minneapolis Saint Paul Airport',
+            '5447': 'Philadelphia International Airport',
+            '5027': 'Detroit International Airport',
+            '5499': 'Champlain-Highgate',
+            '5161': 'Alcan',
+            '13321': 'Chicago O\'Hare'
         }
         location_name = location_names.get(location_id, f'Location {location_id}')
 

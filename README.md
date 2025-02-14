@@ -1,7 +1,21 @@
+pip install pytest pytest-mock python-dotenv pytz requests urllib3
+```
+
+3. Copy `.env.example` to `.env` and configure your settings:
+```bash
+cp .env.example .env
+```
+
+## Configuration
+
+Edit `.env` file with your preferences:
+
+```env
 # Required Configuration
-LOCATION_IDS=14321,5140,5143,5142,5182,5002,5446,5177,5013,5300,5447,5027,5499,5161,13321  # Comma-separated location IDs
-# Common Location IDs Reference:
-# 14321 - Charlotte-Douglas International Airport - 5501 Josh Birmingham Parkway Charlotte NC 28208
+LOCATION_IDS=14321,5140,5143  # Comma-separated location IDs
+
+# Available Location IDs:
+# 14321 - Charlotte International Airport - 5501 Josh Birmingham Parkway Charlotte NC 28208
 # 5140 - JFK International Airport - JFK International Airport Terminal 4 Queens NY 11430
 # 5142 - Boston Logan Airport - Terminal E East Boston MA 02128
 # 5182 - Daniel K. Inouye International Airport - 300 Rodgers Blvd Honolulu HI 96819
@@ -11,7 +25,6 @@ LOCATION_IDS=14321,5140,5143,5142,5182,5002,5446,5177,5013,5300,5447,5027,5499,5
 # 5013 - Miami International Airport - 4200 NW 21st Street Miami FL 33122
 # 5300 - Minneapolis Saint Paul Airport - 4300 Glumack Drive St. Paul MN 55111
 # 5447 - Philadelphia International Airport - Terminal A West Philadelphia PA 19153
-# 14321 - Charlotte International Airport - 5501 Josh Birmingham Parkway Charlotte NC 28208
 # 5027 - Detroit International Airport - 601 Rouge Street Building 499 Detroit MI 48242
 # 5499 - Champlain-Highgate - 237 West Service Road Highgate Springs VT 05460
 # 5161 - Alcan - PO Box 109525 Alcan AK 99515
@@ -19,5 +32,17 @@ LOCATION_IDS=14321,5140,5143,5142,5182,5002,5446,5177,5013,5300,5447,5027,5499,5
 
 # Optional Configuration
 CHECK_INTERVAL=900  # Time between checks in seconds (default: 900)
-NTFY_TOPIC=vu_alert  # ntfy.sh topic for notifications (default: vu_alert)
-# Create your own topic at ntfy.sh for private notifications
+NTFY_TOPIC=your_topic  # ntfy.sh topic for notifications (create your own at ntfy.sh)
+```
+
+## Usage
+
+Run the monitor with:
+
+```bash
+python main.py -l LOCATION_ID -n ntfy -t YOUR_NTFY_TOPIC -i CHECK_INTERVAL
+```
+
+Example:
+```bash
+python main.py -l 14321 -n ntfy -t your_topic -i 900
