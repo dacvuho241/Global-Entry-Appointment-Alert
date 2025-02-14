@@ -1,10 +1,25 @@
 import os
 import time
 import logging
+import argparse
 from config import load_config
 from slot_checker import GlobalEntrySlotChecker
 from notifier import Notifier
 from utils import setup_logging
+
+def parse_args():
+    """Parse command line arguments"""
+    parser = argparse.ArgumentParser(description='Global Entry Appointment Slot Checker')
+    parser.add_argument('-l', '--location', required=True,
+                      help='Location ID to check for appointments')
+    parser.add_argument('-n', '--notifier', required=True,
+                      choices=['ntfy'],
+                      help='Notification service to use (currently only ntfy supported)')
+    parser.add_argument('-t', '--topic', default='vu_alert',
+                      help='ntfy.sh topic for notifications (default: vu_alert)')
+    parser.add_argument('-i', '--interval', type=int, default=300,
+                      help='Time between checks in seconds (default: 300)')
+    return parser.parse_args()
 
 def main():
     # Setup logging
@@ -12,8 +27,17 @@ def main():
     logger = logging.getLogger(__name__)
 
     try:
-        # Load configuration
-        config = load_config()
+        # Parse command line arguments
+        args = parse_args()
+
+        # Update config with command line arguments
+        config = {
+            'LOCATION_IDS': [args.location],
+            'DATE_START': load_config()['DATE_START'],
+            'DATE_END': load_config()['DATE_END'],
+            'CHECK_INTERVAL': args.interval,
+            'NTFY_TOPIC': args.topic
+        }
 
         # Initialize components
         slot_checker = GlobalEntrySlotChecker(
@@ -25,6 +49,9 @@ def main():
         notifier = Notifier(ntfy_topic=config['NTFY_TOPIC'])
 
         logger.info("Global Entry Slot Notifier started")
+        logger.info(f"Checking location ID: {args.location}")
+        logger.info(f"Using notifier: {args.notifier}")
+        logger.info(f"Check interval: {args.interval} seconds")
 
         # Send a test notification on startup
         logger.info("Sending test notification...")
